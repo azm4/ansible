@@ -1,0 +1,2 @@
+#!/bin/bash
+systemctl status bind9 > /dev/null 2>&1
