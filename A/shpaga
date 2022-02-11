@@ -48,4 +48,4 @@ SRV-1 DNS-----------------------------------------------------------------------
 apt install bind9
 Nano /etc/bind/named.conf.options
 
-(https://github.com/azm4/ansible/blob/a28ac102e14fc4160ca29b71a964f1013d66dd50/A/namedconf.png)
+![kek](https://github.com/azm4/ansible/blob/a28ac102e14fc4160ca29b71a964f1013d66dd50/A/namedconf.png)
