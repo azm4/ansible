@@ -3,8 +3,8 @@
 	Timedatectl set-timezone EuropeMoscow
 	
 	ISP - iptables -t nat -A POSTROUTING -s 0.0.0.0/0 -o ens192 -j MASQUERADE
-		Iptables-save > /etc/iptables/rules.v4
-		
+	Iptables-save > /etc/iptables/rules.v4
+	
 	FW - Nano /etc/resolv.conf
 		200.100.200.254
 		Apt install iptables*
