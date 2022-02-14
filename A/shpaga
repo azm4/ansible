@@ -233,12 +233,95 @@ CLI-L В домене
 		send host-name = "CLI-L.company.msk";
 
 CLI-L В домене - DC
+	(https://github.com/azm4/ansible/blob/master/A/clil1.png)
+
+DC - DISK
+	shares -> new share
+	
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+APP and Certs center
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+SRV-1
+	apt install nginx (same for srv-2)
+	mkdir /opt/web
+	vim /opt/web/index.html
+		<!DOCTYPE...
+		</html>
+		(this is srv-1 172.20.30.100)
+	chmod 777 /opt/web/ -R
+	vim /etc/nginx/conf.d/site.conf
+		server {
+			listen 0.0.0.0:80;
+			location / {
+				root /opt/web;
+				index index.html;
+		}
+		}
+	nginx -t
+	systemctl restart nginx
+	apt install curl -y
+	curl 127.0.0.1
+	cp /etc/nginx/conf.d/site.conf /etc/nginx/sites-enabled/
+	rm -rf /etc/nginx/sites-enabled/default
+	systemctl restart nginx
+	curl 127.0.0.1
+	
+SRV-2
+	mkdir /opt/web
+SRV-1
+	scp /opt/web/index.html root@172.20.30.20:/opt/web/
+	scp /etc/nginx/sites-enabled/site.conf root@172.20.30.20:/etc/nginx/sites-enabled/
+SRV-2
+	rm -rf /etc/nginx/sites-enabled/default
+	vim /opt/web/index.html
+		srv-2
+	systemctl restart nginx
+
+DC	
+	https://github.com/azm4/ansible/blob/master/A/dccert.jpg
+	https://github.com/azm4/ansible/blob/master/A/dccert2.jpg
+	https://github.com/azm4/ansible/blob/master/A/dccert3.jpg
+	https://github.com/azm4/ansible/blob/master/A/dccert4.jpg
+	https://github.com/azm4/ansible/blob/master/A/dccert5.jpg
+
+FW 
+	vim /etc/ssh/sshd_config
+		permitrootlogin yes
+	systemctl restart sshd
+
+DC
+	C:\APP.pfx root@172.20.30.1:/root/
+
+FW
+	openssl -pcks12 -in APP.pfx -out APP.pem -nodes
+	cp APP.pem /etc/ssl/certs/
+	apt install haproxy
+	cp /usr/share/doc/haproxy/exapmles/transparent_proxy.cfg /etc/haproxy/proxy.cfg
+	----------
+	https://github.com/azm4/ansible/blob/master/A/fwfrontend.png
+	----------
+	(/etc/haproxy)mv proxy.cfg haproxy.cfg
+	vim /etc/haproxy/haproxy.cfg
+		backend TransparentBack_http
+			mode http
+			balance roundrobin
+			server s1 172.20.30.100:80 weight 3
+			server s1 172.20.30.20:80 weight 1
+	systemctl restart haproxy
+	
+	
+	
+	
+	nmtui
+	systemctl enable named (bind9)
+	
 	
 
 
 
-
-
+(apparmor)
+/etc/selinux/config
+enforcing -> disabled -> reboot
 
 
 
