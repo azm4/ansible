@@ -16,51 +16,239 @@
 	FW - iptables -t nat -A POSTROUTING -s 172.20.0.0/16 -o ens192 -j MASQUERADE
 		Iptables-save > /etc/iptables/rules.v4
 		
-##DC------------------------------------------------------------------------------------------------
-2 АД + юзеры + таймзона
-3 ДНС зоны (Тулз - ДНС)
-	ПКМ company.msk - new host 
-		_____ - 200.100.200.100
-		App - 200.100.200.100
-		Ntp - 172.20.30.100 (SRV-1)
-		Dns - 172.20.30.20 (SRV-2)
-		Ntp.branch - 192.168.200.200
-		Dns.branch - 192.168.200.200
-		МБ ПОСЛЕ НАСТРОЙКИ срв-1 и срв-2
-		FW - 172.20.20.1 (ГАЛОЧКА) 
-		Reverse Lookup Zone
-			172.20.20 (FW)
-		DC - 172.20.10.100
-		SRV-1 -172.20.30.100
-		SRV-2 - 172.20.30.20
+DC------------------------------------------------------------------------------------------------
+	2 АД + юзеры + таймзона
+	3 ДНС зоны (Тулз - ДНС)
+		ПКМ company.msk - new host 
+			_____ - 200.100.200.100
+			App - 200.100.200.100
+			Ntp - 172.20.30.100 (SRV-1)
+			Dns - 172.20.30.20 (SRV-2)
+			Ntp.branch - 192.168.200.200
+			Dns.branch - 192.168.200.200
+			МБ ПОСЛЕ НАСТРОЙКИ срв-1 и срв-2
+			FW - 172.20.20.1 (ГАЛОЧКА) 
+			Reverse Lookup Zone
+				172.20.20 (FW)
+			DC - 172.20.10.100
+			SRV-1 -172.20.30.100
+			SRV-2 - 172.20.30.20
+
+		ПКМ зона company.msk - пропертис - зон трансферс
+		Only to the foll servers 
+			Srv-1 172.20.30.100
+			Srv-2 172.20.30.20
+			Srv 192.168.200.200
+		ПКМ зона _msdcs - пропертис - зон трансферс
+		Only to the foll servers 
+			Srv-1 172.20.30.100
+			Srv-2 172.20.30.20
+			Srv 192.168.200.200
 		
-	ПКМ зона company.msk - пропертис - зон трансферс
-	Only to the foll servers 
-		Srv-1 172.20.30.100
-		Srv-2 172.20.30.20
-		Srv 192.168.200.200
-	ПКМ зона _msdcs - пропертис - зон трансферс
-	Only to the foll servers 
-		Srv-1 172.20.30.100
-		Srv-2 172.20.30.20
-		Srv 192.168.200.200
-##SRV-1 DNS-----------------------------------------------------------------------------------------------------------
-apt install bind9
-Nano /etc/bind/named.conf.options
----------
-(https://github.com/azm4/ansible/blob/a28ac102e14fc4160ca29b71a964f1013d66dd50/A/namedconf.png)
----------
-Named.conf.default-zones
----------
-(https://github.com/azm4/ansible/blob/7b6eba6d3d5f10b37f170053c4757e8907f3cb10/A/%D0%91%D0%B5%D0%B7%D1%8B%D0%BC%D1%8F%D0%BD%D0%BD%D1%8B%D0%B9%20%D1%80%D0%B8%D1%81%D1%83%D0%BD%D0%BE%D0%BA.png)
----------
-ПРОВЕРКА: named-checkconf
-Mkdir /opt/dns
-(/etc/bind) chown -R bind:bind /opt/dns
-chmod 777 /opt/dns -R
-Systemctl disable --now apparmor
-Systemctl restart bind9
-reboot
-##SRV-2 DNS---------------------------------------------------------------------------------------------------------------------
-Same as SRV-1
+SRV-1 DNS-----------------------------------------------------------------------------------------------------------
+	apt install bind9
+	Nano /etc/bind/named.conf.options
+	---------
+	(https://github.com/azm4/ansible/blob/a28ac102e14fc4160ca29b71a964f1013d66dd50/A/namedconf.png)
+	---------
+	Named.conf.default-zones
+	---------
+	(https://github.com/azm4/ansible/blob/7b6eba6d3d5f10b37f170053c4757e8907f3cb10/A/%D0%91%D0%B5%D0%B7%D1%8B%D0%BC%D1%8F%D0%BD%D0%BD%D1%8B%D0%B9%20%D1%80%D0%B8%D1%81%D1%83%D0%BD%D0%BE%D0%BA.png)
+	---------
+	ПРОВЕРКА: named-checkconf
+	Mkdir /opt/dns
+	(/etc/bind) chown -R bind:bind /opt/dns
+	chmod 777 /opt/dns -R
+	Systemctl disable --now apparmor
+	Systemctl restart bind9
+	reboot
+
+SRV-2 DNS---------------------------------------------------------------------------------------------------------------------
+	Same as SRV-1
+
+SRV-1 keepalive
+	Apt install keepalived
+	Nano /etc/keepalived/keepalived.conf
+		Global_defs { 
+			Enable_script_security
+			Scrip_user root
+		}
+		Vrrp_script dns_check { 
+			Script "/usr/dns_check"
+			Interval 2
+			Timeout 2
+			Rise 1 
+			Fail 2
+		}
+		Vrrp_instance DNS {
+			State MASTER
+			Interface ens192 (доступный)
+			Virtual_router_id 53
+			Advert_int 1
+			Priority 10
+			Virtual_ipaddress {
+				172.20.30.10/24
+			}
+			Track_interface {
+				Ens192
+			}
+			Track_script {
+				Dns_check
+			}
+		}
+		Vrrp_script ntp_check { 
+			Script "/usr/ntp_check"
+			Interval 2
+			Timeout 2
+			Rise 1 
+			Fail 2
+		}
+		Vrrp_instance NTP {
+			State MASTER
+			Interface ens192 (доступный)
+			Virtual_router_id 123
+			Advert_int 1
+			Priority 10
+			Virtual_ipaddress {
+				172.20.30.15/24
+			}
+			Track_interface {
+				Ens192
+			}
+			Track_script {
+				ntp_check
+			}
+		}
+
+
+
+	Nano /usr/dns_check
+		#!/bin/bash
+		Systemctl status bind9 > /dev/null 2>&1
+	Cmod +x /usr/dns_check
+	/usr/dns_check
+	systemctl restart keepalived.service
+
+SSH (On SRV-2)
+	Nano /etc/ssh/sshd_config
+		permitRootLogin yes
+	Systemctl restart sshd
+
+On SRV-1
+	scp /etc/keepalived/keepalived.conf /usr/dns_check root@172.20.30.20:/etc/keepalived/
+
+SRV-2
+	Cd /rtc/keepalived/
+	Mv dns_check /usr
+	Nano keepalived.conf
+		vrrp_instance DNS {
+			state BACKUP
+			priority 9
+
+DC - DHCP
+	Roles and features
+		Dhcp server
+	Tools -> DHCP
+		DHCP -> ipv4 -> new scope -> (Clients)
+		172.20.20.100 - 172.20.20.150/24
+		DEFAULT-GATEWAY - 172.20.20.1
+		Убрать ДНС
+		Добавить 172.20.30.10
+
+FW
+	Apt install isc-dhcp-relay
+		172.20.10.100
+		To DC and to Clients
+		Ens224 ens256
+
+CLI-W Internet
+	Добавить в домен
+
+ISP Chrony
+	Apt install chrony
+	Nano /etc/chrony/chrony.conf
+		Allow 200.100.0.0/16
+	Systemctl restart chronyd
+
+SRV-1 Chrony
+	Apt install chrony
+	Nano /etc/chrony/chrony.conf
+		Pool (isp) 200.100.100.254 iburst
+		Allow 172.20.0.0/16
+	Systemctl restart chronyd
+
+	cp /usr/dns_check /usr/ntp_check /usr/ntp_check
+	chmod +x /usr/ntp_check
+	vim /usr/ntp_check
+	
+	-------------------------------------------
+	-#!/bin/bash
+	-systemctl status chronyd > /dev/null 2>&1
+	-------------------------------------------
+	
+	scp /usr/ntp_check root@172.20.30.20:/usr/
+	systemctl restart keepalived.service
+	
+SRV-2 Chrony
+	Apt install chrony
+	Nano /etc/chrony/chrony.conf
+		Pool (isp) 200.100.100.254 iburst
+		Allow 172.20.0.0/16
+	Systemctl restart chronyd
+	vim /etc/keepalived/keepalived.conf
+	---------
+	(https://github.com/azm4/ansible/blob/04f624dfd3289ea54c7c0ae214847a10ff311522/A/chronyd.jpg)
+	---------
+	systemctl restart keepalived.service
+	
+CLI-L Chrony
+	Apt install chrony
+	vim /etc/chrony/chrony.conf
+		pool 172.20.30.15 iburst
+		sourcedir /run/chrony-dhcp
+	systemctl restart chronyd
+
+DC Chrony
+	(https://github.com/azm4/ansible/blob/master/A/dc1.png)
+	(https://github.com/azm4/ansible/blob/master/A/dc2.png)
+	(https://github.com/azm4/ansible/blob/master/A/dc3.png)
+	(https://github.com/azm4/ansible/blob/master/A/dc4.png)
+	(https://github.com/azm4/ansible/blob/master/A/dc5.png)
+	(https://github.com/azm4/ansible/blob/master/A/dc6.png)
+	(https://github.com/azm4/ansible/blob/master/A/dc7.png)
+
+CLI-W Chrony
+	gpupdate /force
+	(https://github.com/azm4/ansible/blob/master/A/cliw1.png)
+
+CLI-L В домене
+	apt install adcli
+	apt install sssd
+	real join company.msk --install=/ -U Administrator -v
+	systemctl restart sssd
+	reboot
+	vim /etc/pam.d/login
+		session required pam_mkhomedir.so skel=/etc/skel umask=0077
+	vim /etc/dhcp/dhclient.conf
+		send host-name = "CLI-L.company.msk";
+
+CLI-L В домене - DC
+	
+
+
+
+
+
+
+
+
+
+/etc/hosts
+
+
+
+
+
+
+
 
