@@ -1,22 +1,22 @@
-	Скрины ip на уст-вах в СКРИНЫ
-	Systemctl restart networking
-	Timedatectl set-timezone EuropeMoscow
+Скрины ip на уст-вах в СКРИНЫ
+Systemctl restart networking
+Timedatectl set-timezone EuropeMoscow
 	
-	ISP - iptables -t nat -A POSTROUTING -s 0.0.0.0/0 -o ens192 -j MASQUERADE
-	Iptables-save > /etc/iptables/rules.v4
+ISP - iptables -t nat -A POSTROUTING -s 0.0.0.0/0 -o ens192 -j MASQUERADE
+Iptables-save > /etc/iptables/rules.v4
 	
-	FW - Nano /etc/resolv.conf
+FW - Nano /etc/resolv.conf
 		200.100.200.254
 		Apt install iptables*
 		Nano /etc/sysctl.conf (24) -> sysctl -p (ctroka)
 		
-	SRV-1, SRV-2 - Nano /etc/resolv.conf
+SRV-1, SRV-2 - Nano /etc/resolv.conf
 			200.100.100.254
 			
-	FW - iptables -t nat -A POSTROUTING -s 172.20.0.0/16 -o ens192 -j MASQUERADE
+FW - iptables -t nat -A POSTROUTING -s 172.20.0.0/16 -o ens192 -j MASQUERADE
 		Iptables-save > /etc/iptables/rules.v4
 		
-	##DC------------------------------------------------------------------------------------------------
+DC------------------------------------------------------------------------------------------------
 	2 АД + юзеры + таймзона
 	3 ДНС зоны (Тулз - ДНС)
 		ПКМ company.msk - new host 
