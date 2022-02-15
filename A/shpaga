@@ -309,6 +309,14 @@ FW
 			server s1 172.20.30.20:80 weight 1
 	systemctl restart haproxy
 	
+CLI-L
+	permitrootlogin yes 
+	systemctl restart sshd
+	scp C:\Root.cer root@172.20.20.101:/root/
+	openssl x509 -inform DER -in Root.cer -out Root.crt
+	cp Root.crt /etc/ssl/certs/
+	cp Root.crt /usr/share/ca-certificates/
+	dpkg-reconfigure ca-certificates
 	
 	
 	
